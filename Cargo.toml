@@ -16,3 +16,4 @@ clap = { version = "4.4.7", features = ["derive"] }
 serde = { version = "1.0.192", features = ["derive"] }
 async-trait = "0.1.74"
 futures = "0.3.29"
+parking_lot = "0.12.1"

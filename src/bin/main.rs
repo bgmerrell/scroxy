@@ -1,10 +1,11 @@
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::sync::Mutex;
 
 use ::clap::Parser;
-use ::http_body_util::{combinators::BoxBody, Empty, Full};
+use ::futures::future::{BoxFuture, FutureExt};
+use ::http_body_util::BodyExt;
+use ::http_body_util::{combinators::BoxBody, Empty};
 use ::hyper::body::{Bytes, Incoming as IncomingBody};
 use ::hyper::client::conn::http1::Builder;
 use ::hyper::server::conn::http1;
@@ -12,9 +13,8 @@ use ::hyper::service::Service;
 use ::hyper::{Request, Response, StatusCode};
 use ::hyper_util::rt::TokioIo;
 use ::log::{debug, error, info};
+use ::parking_lot::RwLock;
 use ::tokio::net::{TcpListener, TcpStream};
-use futures::future::{BoxFuture, FutureExt};
-use http_body_util::BodyExt;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     debug!("args: {:?}", args);
     let addr = SocketAddr::from(([0, 0, 0, 0], 9999));
-    let db = Arc::new(Mutex::new(Database {}));
+    let db = Arc::new(RwLock::new(Database {}));
 
     let listener = TcpListener::bind(addr).await?;
     info!("Listening on http://{}", addr);
@@ -41,13 +41,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let (stream, _) = listener.accept().await?;
         let io = TokioIo::new(stream);
         let db = db.clone();
-        let scroxy = Scroxy::new(db.clone());
+        let scroxy = Scroxy::new(db);
 
         tokio::task::spawn(async move {
             if let Err(err) = http1::Builder::new()
                 .preserve_header_case(true)
                 .title_case_headers(true)
-                .serve_connection(io, scroxy.clone())
+                .serve_connection(io, scroxy)
                 .with_upgrades()
                 .await
             {
@@ -57,9 +57,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
-#[derive(Clone)]
 struct Scroxy {
-    db: Arc<Mutex<Database>>,
+    db: Arc<RwLock<Database>>,
 }
 
 impl Service<Request<IncomingBody>> for Scroxy {
@@ -113,7 +112,7 @@ impl Service<Request<IncomingBody>> for Scroxy {
 }
 
 impl Scroxy {
-    fn new(db: Arc<Mutex<Database>>) -> Self {
+    fn new(db: Arc<RwLock<Database>>) -> Self {
         Scroxy { db }
     }
 
