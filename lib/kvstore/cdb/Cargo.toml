@@ -1,8 +1,10 @@
 [package]
-name = "scroxy_kvstore"
+name = "scroxy_cdb_backend"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.73.0"
 
 [dependencies]
+scroxy_data.workspace = true
+scroxy_kvstore.workspace = true
 serde_json.workspace = true

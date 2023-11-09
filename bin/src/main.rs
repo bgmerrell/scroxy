@@ -16,6 +16,8 @@ use ::log::{debug, error, info};
 use ::parking_lot::RwLock;
 use ::tokio::net::{TcpListener, TcpStream};
 
+use ::scroxy_data::Database;
+
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 struct Args {
@@ -23,16 +25,24 @@ struct Args {
     cdb_dir: PathBuf,
 }
 
-// TODO: Implement me
-struct Database {}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ::env_logger::init();
     let args = Args::parse();
     debug!("args: {:?}", args);
+    let db = get_db(args);
+    run(db).await
+}
+
+#[cfg(feature = "cdb_backend")]
+fn get_db(args: Args) -> Arc<RwLock<impl Database>> {
+    Arc::new(RwLock::new(::scroxy_cdb_backend::CDB::new(args.cdb_dir)))
+}
+
+async fn run<DB: Database + Sync + 'static>(
+    database: Arc<RwLock<DB>>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let addr = SocketAddr::from(([0, 0, 0, 0], 9999));
-    let db = Arc::new(RwLock::new(Database {}));
 
     let listener = TcpListener::bind(addr).await?;
     info!("Listening on http://{}", addr);
@@ -40,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         let (stream, _) = listener.accept().await?;
         let io = TokioIo::new(stream);
-        let db = db.clone();
+        let db = database.clone();
         let scroxy = Scroxy::new(db);
 
         tokio::task::spawn(async move {
@@ -57,11 +67,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
-struct Scroxy {
-    db: Arc<RwLock<Database>>,
+struct Scroxy<DB: Database> {
+    db: Arc<RwLock<DB>>,
 }
 
-impl Service<Request<IncomingBody>> for Scroxy {
+impl<DB> Service<Request<IncomingBody>> for Scroxy<DB>
+where
+    DB: Database,
+{
     type Error = hyper::Error;
     type Response = Response<BoxBody<Bytes, Self::Error>>;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
@@ -111,8 +124,11 @@ impl Service<Request<IncomingBody>> for Scroxy {
     }
 }
 
-impl Scroxy {
-    fn new(db: Arc<RwLock<Database>>) -> Self {
+impl<DB> Scroxy<DB>
+where
+    DB: Database,
+{
+    fn new(db: Arc<RwLock<DB>>) -> Self {
         Scroxy { db }
     }
 

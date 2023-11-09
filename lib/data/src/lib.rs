@@ -1,9 +1,13 @@
 use serde::Deserialize;
 
+pub trait Database: Send {
+    fn get_origin(&self, key: &str) -> Origin;
+}
+
 #[derive(Deserialize, Debug)]
 pub struct Origin {
     /// The origin host address
-    host: String,
+    pub host: String,
     /// The origin host port
-    port: u16,
+    pub port: u16,
 }

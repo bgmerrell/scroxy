@@ -1,5 +1,5 @@
 [package]
-name = "scroxy_cfg"
+name = "scroxy_data"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.73.0"

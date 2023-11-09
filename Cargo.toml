@@ -1,14 +1,17 @@
 [workspace]
 members = [
   "bin",
-  "lib/cfg",
+  "lib/data",
   "lib/kvstore",
 ]
 resolver = "2"
 
 [workspace.dependencies]
+scroxy_kvstore = { path = "./lib/kvstore"}
+scroxy_cdb_backend = { path = "./lib/kvstore/cdb"}
+scroxy_data = { path = "./lib/data"}
 bytes = "1.4.0"
-env_logger = "0.9.0"
+env_logger = "0.10.0"
 log = "0.4"
 hyper = { version = "1.0.0-rc.4", features = ["full"] }
 tokio = { version = "1", features = ["full"] }
@@ -16,5 +19,6 @@ http-body-util = "0.1.0-rc.3"
 hyper-util = { git = "https://github.com/hyperium/hyper-util.git" }
 clap = { version = "4.4.7", features = ["derive"] }
 serde = { version = "1.0.192", features = ["derive"] }
+serde_json = "1.0.108"
 futures = "0.3.29"
 parking_lot = "0.12.1"

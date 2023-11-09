@@ -8,7 +8,13 @@ rust-version = "1.73.0"
 path = "src/main.rs"
 name = "scroxy"
 
+[features]
+default = ["cdb_backend"]
+cdb_backend = []
+
 [dependencies]
+scroxy_data.workspace = true
+scroxy_cdb_backend.workspace = true
 env_logger.workspace = true
 log.workspace = true
 hyper.workspace = true
