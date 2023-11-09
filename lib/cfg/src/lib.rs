@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-#[dervice(Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Origin {
     /// The origin host address
     host: String,

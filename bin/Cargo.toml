@@ -1,0 +1,21 @@
+[package]
+name = "scroxy"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.73.0"
+
+[[bin]]
+path = "src/main.rs"
+name = "scroxy"
+
+[dependencies]
+env_logger.workspace = true
+log.workspace = true
+hyper.workspace = true
+tokio.workspace = true
+http-body-util.workspace = true
+hyper-util.workspace = true
+clap.workspace = true
+serde.workspace = true
+futures.workspace = true
+parking_lot.workspace = true
